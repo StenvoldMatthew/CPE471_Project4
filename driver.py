@@ -113,7 +113,7 @@ def injectNoise(data):
 
     if addImuCovarianceNoise:
       noise = random.gauss(0, 0.1)
-      data['CoIt'][i] += np.clip(noise, -maxNoise, maxNoise)
+      data['CoIt'][i] = addCovNoise(data['CoIt'][i])
 
     if addGpsPositionNoise:
       noiseX = random.gauss(0, 0.1)
@@ -122,13 +122,16 @@ def injectNoise(data):
       data['Gy'][i] += np.clip(noiseY, -maxNoise, maxNoise)
 
     if addGpsCovarianceNoise:
-      noiseCoX = random.gauss(0, 0.1)
-      noiseCoY = random.gauss(0, 0.1)
-      data['CoGx'][i] += np.clip(noiseCoX, -maxNoise, maxNoise)
-      data['CoGy'][i] += np.clip(noiseCoY, -maxNoise, maxNoise)
+      data['CoGx'][i] = addCovNoise(data['CoGx'][i])
+      data['CoGy'][i] = addCovNoise(data['CoGy'][i])
 
 
   return data
+
+def addCovNoise(currentVal, mean=0.0, std=0.1, minVal=0.0001, maxVal=1.0):
+    noise = random.gauss(mean, std)
+    noisyVal = currentVal + noise
+    return np.clip(noisyVal, minVal, maxVal)
 
 
 def plotResults(filteredX, filteredY, gpsX, gpsY, odoX, odoY,
@@ -227,9 +230,9 @@ def setNoiseScenario(scenarioId):
   
 def setQMatrix(testCase=0):
   testingVars = [.0005,.0008,.001,.0012,.0015]
-  x = .00018
-  y = .00018
-  velocity = .00005
+  x = .00008
+  y = .00008
+  velocity = .005
   thetaNoise = .001
   omegaNoise = 0.001
   Q = np.diag([
@@ -252,6 +255,8 @@ addGpsCovarianceNoise = False
 applyNoiseGlobally = True
 noiseRange = (1000, 2000)  # Only used if applyNoiseGlobally is False
 
+
+
 """
   Set global noise booleans and range settings for report scenarios.
 
@@ -269,7 +274,7 @@ scenario = 1
 
 if __name__ == "__main__":
   for testCase in range(7):  # Try all combinations
-    print(testCase)
+    print("Scenario " + str(testCase))
     Q = setQMatrix()
     setNoiseScenario(testCase)
     dataFilePath = "data/EKF_DATA_circle.txt"
